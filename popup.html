@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SpendWise Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .brand-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .header-actions {
+      display: flex;
+      gap: 6px;
+    }
+    .quick-entry-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      background: #fff;
+      margin-bottom: 12px;
+    }
+    .category-scroll {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      margin-bottom: 8px;
+    }
+    .category-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+      background: #fff;
+      cursor: pointer;
+      white-space: nowrap;
+      user-select: none;
+    }
+    .category-chip.selected {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary);
+      font-weight: 600;
+    }
+    .onboarding-card {
+      background: #fff;
+      border-radius: var(--radius-md);
+      padding: 16px;
+      text-align: center;
+      border: 1px solid var(--border);
+    }
+    .onboarding-icon {
+      font-size: 2.5rem;
+      margin-bottom: 8px;
+    }
+    .form-row {
+      display: flex;
+      gap: 8px;
+    }
+    .form-row .form-group {
+      flex: 1;
+    }
+  </style>
+</head>
+<body class="popup-body">
+
+  <!-- First-launch Onboarding Screen -->
+  <div id="onboardingScreen" style="display: none;">
+    <div class="onboarding-card">
+      <div class="onboarding-icon">✨</div>
+      <h2 style="font-size: 1.2rem; margin-bottom: 6px;">Welcome to SpendWise</h2>
+      <p class="text-sm text-muted" style="margin-bottom: 16px;">
+        Take control of your spending. Let's start with your preferred currency and starting income.
+      </p>
+
+      <form id="onboardingForm">
+        <div class="form-group" style="text-align: left;">
+          <label class="form-label">Currency</label>
+          <select id="onboardCurrency" class="form-select">
+            <option value="USD">USD ($)</option>
+            <option value="EUR">EUR (€)</option>
+            <option value="GBP">GBP (£)</option>
+            <option value="INR">INR (₹)</option>
+            <option value="CAD">CAD (CA$)</option>
+            <option value="AUD">AUD (AU$)</option>
+            <option value="JPY">JPY (¥)</option>
+            <option value="CHF">CHF (CHF)</option>
+            <option value="BRL">BRL (R$)</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="text-align: left;">
+          <label class="form-label">Initial Income / Starting Balance</label>
+          <div class="input-with-symbol">
+            <span class="currency-addon" id="onboardCurrencySymbol">$</span>
+            <input type="number" step="0.01" min="0" id="onboardIncome" class="form-input" placeholder="e.g. 3500.00" required>
+          </div>
+        </div>
+
+        <div class="form-group" style="text-align: left;">
+          <label class="form-label">Monthly Spending Budget (Optional)</label>
+          <div class="input-with-symbol">
+            <span class="currency-addon" id="onboardBudgetSymbol">$</span>
+            <input type="number" step="0.01" min="0" id="onboardBudget" class="form-input" placeholder="e.g. 2000.00">
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+          Get Started
+        </button>
+
+        <div style="margin-top: 14px; padding-top: 10px; border-top: 1px dashed var(--border);">
+          <button type="button" id="btnLoadSampleData" class="btn btn-secondary btn-sm" style="width: 100%;">
+            ⚡ Try with realistic sample data
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main Popup Screen -->
+  <div id="mainScreen" style="display: none;">
+    <!-- Header -->
+    <div class="header-bar">
+      <div class="brand-title">
+        <span>💎</span> SpendWise
+      </div>
+      <div class="header-actions">
+        <button id="btnOpenDashboard" class="btn btn-secondary btn-sm" title="Open Full Dashboard">
+          📊 Dashboard ↗
+        </button>
+      </div>
+    </div>
+
+    <!-- Active Sample Banner -->
+    <div id="sampleNotice" class="alert alert-info" style="display: none; padding: 6px 10px; font-size: 0.75rem; justify-content: space-between; align-items: center;">
+      <span>Viewing sample preview data</span>
+      <button id="btnClearSample" style="background: none; border: none; color: #1E40AF; text-decoration: underline; cursor: pointer; font-size: 0.75rem;">Clear Sample</button>
+    </div>
+
+    <!-- Budget Warning Alert Banner -->
+    <div id="budgetWarning" class="alert alert-warning" style="display: none;">
+      <span id="budgetWarningText">⚠️ You have reached 85% of your monthly budget.</span>
+    </div>
+
+    <!-- Summary Balance Cards -->
+    <div class="summary-grid">
+      <div class="summary-card income">
+        <div class="summary-title">Income</div>
+        <div class="summary-amount" id="sumIncome">$0.00</div>
+      </div>
+      <div class="summary-card expense">
+        <div class="summary-title">Expenses</div>
+        <div class="summary-amount" id="sumExpense">$0.00</div>
+      </div>
+      <div class="summary-card balance">
+        <div class="summary-title">Balance</div>
+        <div class="summary-amount" id="sumBalance">$0.00</div>
+      </div>
+    </div>
+
+    <!-- Quick Add Transaction Form -->
+    <div class="quick-entry-card">
+      <div class="type-toggle-group">
+        <button type="button" class="type-toggle-btn active expense" id="tabExpense">Expense</button>
+        <button type="button" class="type-toggle-btn" id="tabIncome">Income</button>
+      </div>
+
+      <form id="txForm">
+        <div class="form-row">
+          <div class="form-group" style="flex: 1.2;">
+            <label class="form-label">Amount</label>
+            <div class="input-with-symbol">
+              <span class="currency-addon" id="entryCurrencySymbol">$</span>
+              <input type="number" id="txAmount" class="form-input" step="0.01" min="0.01" placeholder="0.00" required>
+            </div>
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label class="form-label">Date</label>
+            <input type="date" id="txDate" class="form-input" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <div class="category-scroll" id="categoryChips"></div>
+          <input type="hidden" id="txCategory" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Note / Description (Optional)</label>
+          <input type="text" id="txNote" class="form-input" placeholder="e.g. Lunch with team">
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; cursor: pointer; color: var(--text-muted);">
+            <input type="checkbox" id="txRecurring"> Recurring monthly
+          </label>
+        </div>
+
+        <button type="submit" id="btnSubmitTx" class="btn btn-primary" style="width: 100%;">
+          + Add Expense
+        </button>
+      </form>
+    </div>
+
+    <!-- Recent Transactions Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+      <h3 style="font-size: 0.88rem;">Recent Activity</h3>
+      <a href="dashboard.html" target="_blank" class="text-xs text-muted" style="text-decoration: none;">View All & Filter →</a>
+    </div>
+
+    <!-- Recent Transactions List -->
+    <div class="tx-list" id="recentTxList"></div>
+  </div>
+
+  <script src="storage.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

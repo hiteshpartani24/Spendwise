@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SpendWise - Personal Financial Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body {
+      background: #F3F4F6;
+      color: var(--text-main);
+      padding: 0;
+      margin: 0;
+      min-height: 100vh;
+    }
+    .layout-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 20px;
+    }
+    .top-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fff;
+      padding: 16px 24px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .period-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #F9FAFB;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+    .period-view-toggle {
+      display: flex;
+      background: #E5E7EB;
+      padding: 2px;
+      border-radius: 6px;
+    }
+    .period-view-btn {
+      border: none;
+      background: transparent;
+      padding: 4px 10px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 4px;
+      color: var(--text-muted);
+    }
+    .period-view-btn.active {
+      background: #fff;
+      color: var(--primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 900px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Charts & Donut */
+    .chart-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      min-height: 280px;
+    }
+    .chart-container {
+      position: relative;
+      width: 230px;
+      height: 230px;
+      margin-bottom: 16px;
+    }
+    .chart-center-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      pointer-events: none;
+    }
+    .chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      width: 100%;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.82rem;
+      background: #F9FAFB;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+    }
+    .legend-color-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    /* Budget tracker card */
+    .budget-item {
+      margin-bottom: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #F3F4F6;
+    }
+    .budget-item:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+    .budget-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      margin-bottom: 4px;
+    }
+
+    /* Tabs */
+    .nav-tabs {
+      display: flex;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+    .nav-tab {
+      padding: 8px 16px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s ease;
+    }
+    .nav-tab.active {
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    /* Table */
+    .table-responsive {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.875rem;
+    }
+    th {
+      background: #F9FAFB;
+      padding: 10px 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+    }
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    tr:hover td {
+      background: #FDFDFD;
+    }
+
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    /* Category cards list */
+    .category-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 14px;
+    }
+    .category-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="layout-container">
+    <!-- Top Navigation -->
+    <header class="top-nav">
+      <div class="nav-brand">
+        <span>💎</span> SpendWise
+        <span class="text-xs text-muted" style="font-weight: normal; margin-left: 8px;">Personal Finance & Expense Tracker</span>
+      </div>
+
+      <div class="period-controls">
+        <div class="period-view-toggle">
+          <button class="period-view-btn active" id="btnViewMonthly">Monthly</button>
+          <button class="period-view-btn" id="btnViewWeekly">Weekly</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <button class="btn-icon" id="btnPrevPeriod" title="Previous Period">◀</button>
+          <span id="currentPeriodLabel" style="font-weight: 600; font-size: 0.9rem; min-width: 130px; text-align: center;">November 2026</span>
+          <button class="btn-icon" id="btnNextPeriod" title="Next Period">▶</button>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 8px;">
+        <button id="btnQuickAddModal" class="btn btn-primary btn-sm">+ Add Transaction</button>
+      </div>
+    </header>
+
+    <!-- Top Alerts & Sample Data Warning -->
+    <div id="dashSampleNotice" class="alert alert-info" style="display: none; justify-content: space-between; align-items: center;">
+      <span>💡 You are previewing SpendWise with realistic sample transactions. You can test and inspect all features safely!</span>
+      <div>
+        <button id="dashBtnClearSample" class="btn btn-secondary btn-sm" style="font-size: 0.78rem;">Clear Sample Data</button>
+      </div>
+    </div>
+
+    <div id="dashBudgetWarning" class="alert alert-warning" style="display: none;">
+      <span id="dashBudgetText">⚠️ Budget Notice: You are nearing your set limit for this period.</span>
+    </div>
+
+    <!-- Summary Metrics -->
+    <div class="summary-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 20px;">
+      <div class="summary-card income">
+        <div class="summary-title">Total Income</div>
+        <div class="summary-amount" id="dIncome">$0.00</div>
+        <div class="text-xs text-muted" id="dIncomeSub" style="margin-top: 4px;">Period earnings</div>
+      </div>
+      <div class="summary-card expense">
+        <div class="summary-title">Total Expenses</div>
+        <div class="summary-amount" id="dExpense">$0.00</div>
+        <div class="text-xs text-muted" id="dExpenseSub" style="margin-top: 4px;">Period spending</div>
+      </div>
+      <div class="summary-card balance">
+        <div class="summary-title">Net Remaining</div>
+        <div class="summary-amount" id="dBalance">$0.00</div>
+        <div class="text-xs text-muted" id="dBalanceSub" style="margin-top: 4px;">Remaining funds</div>
+      </div>
+      <div class="summary-card" style="border-top: 3px solid var(--warning);">
+        <div class="summary-title">Budget Remaining</div>
+        <div class="summary-amount" id="dBudgetLeft">$0.00</div>
+        <div class="text-xs text-muted" id="dBudgetCap" style="margin-top: 4px;">Cap: $0.00</div>
+      </div>
+    </div>
+
+    <!-- Main Navigation Tabs -->
+    <div class="nav-tabs">
+      <div class="nav-tab active" data-tab="tab-overview">Overview & Analytics</div>
+      <div class="nav-tab" data-tab="tab-transactions">All Transactions</div>
+      <div class="nav-tab" data-tab="tab-budgets">Budgets & Limits</div>
+      <div class="nav-tab" data-tab="tab-categories">Categories</div>
+      <div class="nav-tab" data-tab="tab-settings">Backup & Storage</div>
+    </div>
+
+    <!-- TAB 1: OVERVIEW & ANALYTICS -->
+    <div id="tab-overview" class="tab-pane active">
+      <div class="dashboard-grid">
+        <!-- Donut Chart & Category Breakdown -->
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h3 style="font-size: 1.05rem;">Expenses by Category</h3>
+            <span class="text-xs text-muted">Accessible Donut Chart</span>
+          </div>
+
+          <div class="chart-box">
+            <div class="chart-container">
+              <canvas id="categoryDonutCanvas" width="230" height="230"></canvas>
+              <div class="chart-center-text">
+                <div class="text-xs text-muted">Total Spent</div>
+                <div id="donutCenterTotal" style="font-size: 1.15rem; font-weight: 700; color: var(--text-main);">$0.00</div>
+              </div>
+            </div>
+            <!-- Dynamic Accessible Legend with labels, percentage, and exact amounts -->
+            <div class="chart-legend" id="chartLegend"></div>
+          </div>
+        </div>
+
+        <!-- Budget & Spending Snapshot -->
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+            <h3 style="font-size: 1.05rem;">Budget Health</h3>
+            <a href="#" class="text-xs text-muted" id="linkToBudgets" style="text-decoration: none;">Adjust limits →</a>
+          </div>
+
+          <div id="budgetProgressList">
+            <!-- Dynamic Category Budgets & Warnings -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Recent Overview -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <h3 style="font-size: 1.05rem;">Period Transactions</h3>
+          <span class="text-xs text-muted" id="periodTxCount">0 items</span>
+        </div>
+        <div class="table-responsive">
+          <table id="overviewTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Category</th>
+                <th>Note</th>
+                <th>Type</th>
+                <th style="text-align: right;">Amount</th>
+                <th style="text-align: center;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="overviewTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: TRANSACTIONS LIST -->
+    <div id="tab-transactions" class="tab-pane" style="display: none;">
+      <div class="card">
+        <!-- Filter and Search Bar -->
+        <div class="filter-bar">
+          <input type="text" id="filterSearch" class="form-input" placeholder="Search notes or categories..." style="max-width: 260px;">
+          <select id="filterType" class="form-select" style="max-width: 140px;">
+            <option value="all">All Types</option>
+            <option value="expense">Expenses Only</option>
+            <option value="income">Income Only</option>
+          </select>
+          <select id="filterCategory" class="form-select" style="max-width: 180px;">
+            <option value="all">All Categories</option>
+          </select>
+          <button id="btnResetFilters" class="btn btn-secondary btn-sm">Reset</button>
+          <div style="margin-left: auto; display: flex; gap: 8px;">
+            <button id="btnExportCsv" class="btn btn-secondary btn-sm">📥 Export CSV</button>
+            <button id="btnNewTxTab" class="btn btn-primary btn-sm">+ Add Transaction</button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Category</th>
+                <th>Note / Description</th>
+                <th>Recurring</th>
+                <th style="text-align: right;">Amount</th>
+                <th style="text-align: center;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="fullTransactionsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: BUDGETS & LIMITS -->
+    <div id="tab-budgets" class="tab-pane" style="display: none;">
+      <div class="dashboard-grid">
+        <div class="card">
+          <h3 style="font-size: 1.05rem; margin-bottom: 12px;">Monthly Category Budgets</h3>
+          <p class="text-sm text-muted" style="margin-bottom: 16px;">
+            Set planned spending ceilings for each category. SpendWise tracks consumption in real time and flags warning badges when you reach 80% or exceed 100%.
+          </p>
+
+          <form id="categoryBudgetsForm">
+            <div id="categoryBudgetInputs"></div>
+            <button type="submit" class="btn btn-primary" style="margin-top: 14px;">Save Category Budgets</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h3 style="font-size: 1.05rem; margin-bottom: 12px;">Overall Monthly Cap</h3>
+          <p class="text-sm text-muted" style="margin-bottom: 14px;">
+            Total combined monthly expense ceiling across all categories.
+          </p>
+          <form id="overallBudgetForm">
+            <div class="form-group">
+              <label class="form-label">Overall Monthly Limit</label>
+              <div class="input-with-symbol">
+                <span class="currency-addon" id="budgetOverallSymbol">$</span>
+                <input type="number" step="1" min="0" id="inputOverallBudget" class="form-input" placeholder="e.g. 2500">
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">Update Overall Limit</button>
+          </form>
+
+          <div style="margin-top: 24px; padding: 14px; background: #F9FAFB; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+            <div class="font-medium text-sm" style="margin-bottom: 4px;">💡 Gentle Warning Thresholds</div>
+            <p class="text-xs text-muted">
+              • <strong>Safe (Green)</strong>: Under 80% of limit.<br>
+              • <strong>Approaching (Amber)</strong>: 80% to 99% of limit.<br>
+              • <strong>Exceeded (Red)</strong>: 100% or higher.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: CATEGORIES MANAGEMENT -->
+    <div id="tab-categories" class="tab-pane" style="display: none;">
+      <div class="card" style="margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <div>
+            <h3 style="font-size: 1.05rem;">Categories Management</h3>
+            <p class="text-sm text-muted">Create custom categories with icons and colors, or edit existing ones.</p>
+          </div>
+          <button id="btnOpenNewCategoryModal" class="btn btn-primary btn-sm">+ Create New Category</button>
+        </div>
+
+        <div class="category-grid" id="categoryManagementList"></div>
+      </div>
+    </div>
+
+    <!-- TAB 5: BACKUP & STORAGE -->
+    <div id="tab-settings" class="tab-pane" style="display: none;">
+      <div class="dashboard-grid">
+        <div class="card">
+          <h3 style="font-size: 1.05rem; margin-bottom: 12px;">Local Storage & Privacy</h3>
+          <p class="text-sm text-muted" style="margin-bottom: 14px;">
+            <strong>Where is my data stored?</strong> SpendWise uses your browser's sandboxed local storage (<code style="background:#e5e7eb; padding:2px 4px; border-radius:4px;">chrome.storage.local</code> or browser <code style="background:#e5e7eb; padding:2px 4px; border-radius:4px;">localStorage</code>).
+          </p>
+          <p class="text-sm text-muted" style="margin-bottom: 14px;">
+            No accounts, no external tracking, and zero cloud transmission. Everything stays private on your physical device.
+          </p>
+
+          <div class="form-group" style="margin-top: 20px;">
+            <label class="form-label">Currency Preference</label>
+            <select id="settingsCurrency" class="form-select" style="max-width: 240px;">
+              <option value="USD">USD ($)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="GBP">GBP (£)</option>
+              <option value="INR">INR (₹)</option>
+              <option value="CAD">CAD (CA$)</option>
+              <option value="AUD">AUD (AU$)</option>
+              <option value="JPY">JPY (¥)</option>
+              <option value="CHF">CHF (CHF)</option>
+              <option value="BRL">BRL (R$)</option>
+            </select>
+          </div>
+
+          <button id="btnSaveCurrency" class="btn btn-primary btn-sm">Save Currency</button>
+        </div>
+
+        <div class="card">
+          <h3 style="font-size: 1.05rem; margin-bottom: 12px;">Backup & Data Portability</h3>
+          <p class="text-sm text-muted" style="margin-bottom: 16px;">
+            Export a full JSON backup of your transactions, categories, and budgets, or restore from a previous file.
+          </p>
+
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <button id="btnDownloadBackup" class="btn btn-secondary">💾 Export Full Backup (JSON)</button>
+            <button id="btnDownloadCsv2" class="btn btn-secondary">📊 Export Transactions (CSV)</button>
+
+            <div style="margin-top: 10px; padding-top: 12px; border-top: 1px solid var(--border);">
+              <label class="form-label">Restore from Backup File</label>
+              <input type="file" id="fileRestore" accept=".json" class="form-input" style="padding: 6px;">
+            </div>
+
+            <div style="margin-top: 20px; padding-top: 12px; border-top: 1px dashed var(--border);">
+              <label class="form-label" style="color: var(--danger);">Danger Zone</label>
+              <div style="display: flex; gap: 8px;">
+                <button id="btnLoadSampleDataDash" class="btn btn-secondary btn-sm">⚡ Load Realistic Sample Data</button>
+                <button id="btnClearAllData" class="btn btn-danger btn-sm">🗑️ Reset All Data</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD / EDIT TRANSACTION -->
+  <div id="txModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 id="txModalTitle" style="font-size: 1.15rem;">Add Transaction</h3>
+        <button id="btnCloseTxModal" class="btn-icon">✕</button>
+      </div>
+
+      <form id="modalTxForm">
+        <input type="hidden" id="modalTxId">
+        <div class="type-toggle-group">
+          <button type="button" class="type-toggle-btn active expense" id="modalTabExpense">Expense</button>
+          <button type="button" class="type-toggle-btn" id="modalTabIncome">Income</button>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" style="flex: 1.2;">
+            <label class="form-label">Amount</label>
+            <div class="input-with-symbol">
+              <span class="currency-addon" id="modalCurrencySymbol">$</span>
+              <input type="number" id="modalTxAmount" class="form-input" step="0.01" min="0.01" placeholder="0.00" required>
+            </div>
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label class="form-label">Date</label>
+            <input type="date" id="modalTxDate" class="form-input" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select id="modalTxCategory" class="form-select" required></select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Note / Description</label>
+          <input type="text" id="modalTxNote" class="form-input" placeholder="e.g. Groceries at Trader Joe's">
+        </div>
+
+        <div class="form-group">
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; cursor: pointer;">
+            <input type="checkbox" id="modalTxRecurring"> Mark as recurring (salary, rent, subscription)
+          </label>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;">
+          <button type="button" id="btnCancelTxModal" class="btn btn-secondary">Cancel</button>
+          <button type="submit" id="btnSaveTxModal" class="btn btn-primary">Save Transaction</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD / EDIT CATEGORY -->
+  <div id="categoryModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 id="catModalTitle" style="font-size: 1.15rem;">Add Category</h3>
+        <button id="btnCloseCatModal" class="btn-icon">✕</button>
+      </div>
+
+      <form id="modalCategoryForm">
+        <input type="hidden" id="modalCatId">
+
+        <div class="form-group">
+          <label class="form-label">Category Name</label>
+          <input type="text" id="modalCatName" class="form-input" placeholder="e.g. Pet Care, Subscriptions" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" style="flex: 1;">
+            <label class="form-label">Icon (Emoji)</label>
+            <input type="text" id="modalCatIcon" class="form-input" placeholder="🐾" maxlength="4" required>
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label class="form-label">Color</label>
+            <input type="color" id="modalCatColor" class="form-input" value="#4F46E5" style="height: 38px; padding: 2px;">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Type</label>
+          <select id="modalCatType" class="form-select">
+            <option value="expense">Expense Category</option>
+            <option value="income">Income Category</option>
+          </select>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;">
+          <button type="button" id="btnCancelCatModal" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Category</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="storage.js"></script>
+  <script src="dashboard.js"></script>
+</body>
+</html>

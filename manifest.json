@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "SpendWise - Personal Expense Tracker",
+  "version": "1.0.0",
+  "description": "Track income, expenses, set category budgets, and visualize where your money goes.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "SpendWise Tracker"
+  },
+  "permissions": [
+    "storage"
+  ],
+  "options_page": "dashboard.html",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
